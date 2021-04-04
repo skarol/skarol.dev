@@ -1,0 +1,31 @@
+.cv {
+
+}
+
+.cv-name {
+
+}
+
+.cv-position {
+    background-image: linear-gradient(
+        to bottom right, 
+        var(--gradient-color-1),
+        var(--gradient-color-3),
+        var(--gradient-color-4)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.cv-header {
+    font-size: 1.5em;
+}
+
+.cv-experience-list {
+
+}
+
+.cv-about {
+    padding-bottom: 2rem;
+    font-weight: 300;
+}
