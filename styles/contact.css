@@ -1,0 +1,22 @@
+.contact-links {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    font-weight: 300;
+}
+
+.contact-link {
+    padding: 0.5rem 0;
+}
+
+.contact-link a {
+    color: var(--primary-text-color);
+}
+
+.contact-link a:hover {
+    color: var(--secondary-accent-color);
+}
+
+.contact-link > * .icon {
+    padding-right: 1rem;
+}
