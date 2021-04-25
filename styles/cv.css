@@ -1,11 +1,3 @@
-.cv {
-
-}
-
-.cv-name {
-
-}
-
 .cv-position {
     background-image: linear-gradient(
         to bottom right, 
@@ -17,15 +9,54 @@
     -webkit-text-fill-color: transparent;
 }
 
-.cv-header {
-    font-size: 1.5em;
+.cv-list {
+    padding: 2rem 0;
 }
 
-.cv-experience-list {
-
+.cv-header {
+    font-size: 1.5em;
 }
 
 .cv-about {
     padding-bottom: 2rem;
     font-weight: 300;
+}
+
+.cv-card-header {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-bottom: 1.75rem;
+}
+
+.cv-card-header h3 {
+    margin: 0;
+}
+
+.cv-card-header-title {
+    padding-right: 0.5rem;
+    margin: 0;
+}
+
+.cv-card-header-title {
+    font-weight: 400;
+    margin: 0;
+    color: var(--primary-text-color);
+}
+
+.cv-flat-header {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-bottom: 1rem;
+}
+
+.cv-flat-header p {
+    margin: 0;
+    padding: 0;
+}
+
+.cv-flat-title {
+    margin: 0;
+    padding-right: 1rem;
 }
