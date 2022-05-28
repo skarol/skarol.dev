@@ -1,41 +1,48 @@
-.posts-list {
+.speaking-list {
     list-style: none;
 }
 
-.post-sub-header {
+.talk-sub-header {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
 }
 
-.post-sub-header ul {
+.talk-sub-header ul {
     list-style: none;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
 }
 
-.post-sub-header li::after {
+.talk-details p {
+    font-weight: 300;
+}
+
+.talk-sub-header li::after {
     content: "·";
     padding: 0 1rem;
 }
 
-.post-sub-header li:last-child::after {
+.talk-sub-header li:last-child::after {
     content: none;
 }
 
-.post-details p {
-    font-weight: 300;
-}
-
-.tag {
+.talk-link {
     cursor: pointer;
     color: var(--secondary-accent-color);
     transition: opacity .2s;
+    
 }
 
-.tag:hover {
+.talk-link:hover {
     color: var(--secondary-accent-color);
     opacity: 0.7;
+}
+
+.slides {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none;
 }

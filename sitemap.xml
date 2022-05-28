@@ -4,7 +4,7 @@
     <loc>https://skarol.dev/contact</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2022-04-20</lastmod>
+    <lastmod>2022-05-28</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/experience</loc>
@@ -52,7 +52,7 @@
     <loc>https://skarol.dev/formation</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2022-04-20</lastmod>
+    <lastmod>2022-05-28</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/formation/beng</loc>
@@ -88,7 +88,7 @@
     <loc>https://skarol.dev/skills</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2022-04-20</lastmod>
+    <lastmod>2022-05-28</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/skills/agile</loc>
@@ -113,5 +113,17 @@
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
     <lastmod>2021-04-25</lastmod>
+  </url>
+  <url>
+    <loc>https://skarol.dev/speaking</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <lastmod>2022-05-28</lastmod>
+  </url>
+  <url>
+    <loc>https://skarol.dev/speaking/approaching-design-system</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <lastmod>2022-05-28</lastmod>
   </url>
 </urlset>
