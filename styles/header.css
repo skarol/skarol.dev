@@ -17,11 +17,9 @@
     font-size: 2em;
     font-weight: 600;
     background-image: linear-gradient(
-        to bottom right, 
-        var(--gradient-color-1), 
-        var(--gradient-color-2), 
-        var(--gradient-color-3), 
-        var(--gradient-color-4)
+        to bottom right,
+        var(--gradient-color-1),
+        var(--gradient-color-2)
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -38,10 +36,8 @@
     font-weight: 600;
     background-image: linear-gradient(
         to bottom right, 
-        var(--gradient-color-1), 
-        var(--gradient-color-2), 
-        var(--gradient-color-3), 
-        var(--gradient-color-4)
+        var(--gradient-color-1) 9%,
+        var(--gradient-color-2) 93%
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
