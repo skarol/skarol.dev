@@ -4,13 +4,13 @@
     <loc>https://skarol.dev/contact</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2025-02-17</lastmod>
+    <lastmod>2026-10-07</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/experience</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2025-02-17</lastmod>
+    <lastmod>2025-03-06</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/experience/anixe</loc>
@@ -22,7 +22,7 @@
     <loc>https://skarol.dev/experience/lake</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2025-02-17</lastmod>
+    <lastmod>2025-03-06</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/experience/skapiec</loc>
@@ -34,13 +34,13 @@
     <loc>https://skarol.dev/experience/tara</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2025-02-17</lastmod>
+    <lastmod>2025-03-06</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/experience/tooploox</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2025-02-14</lastmod>
+    <lastmod>2025-03-06</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/experience/viessmann</loc>
@@ -52,7 +52,7 @@
     <loc>https://skarol.dev/formation</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2025-02-17</lastmod>
+    <lastmod>2026-10-07</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/formation/beng</loc>
@@ -70,7 +70,13 @@
     <loc>https://skarol.dev/posts</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2024-12-21</lastmod>
+    <lastmod>2026-10-07</lastmod>
+  </url>
+  <url>
+    <loc>https://skarol.dev/posts/scripting-the-iphone-duo-simulator</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <lastmod>2026-10-07</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/posts/why-we-fail-to-keep-good-quality-software</loc>
@@ -82,7 +88,7 @@
     <loc>https://skarol.dev/skills</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2025-02-17</lastmod>
+    <lastmod>2026-10-07</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/skills/front-end</loc>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="og:site_name" content="skarol.dev"/>
+    <link rel="canonical" href="https://skarol.dev/posts/scripting-the-iphone-duo-simulator"/>
+    <meta name="twitter:url" content="https://skarol.dev/posts/scripting-the-iphone-duo-simulator"/>
+    <meta name="og:url" content="https://skarol.dev/posts/scripting-the-iphone-duo-simulator"/>
+    <title>Scripting the iPhone Duo simulator: how Device Hub folds, rotates and touches it | skarol.dev</title>
+    <meta name="twitter:title" content="Scripting the iPhone Duo simulator: how Device Hub folds, rotates and touches it | skarol.dev"/>
+    <meta name="og:title" content="Scripting the iPhone Duo simulator: how Device Hub folds, rotates and touches it | skarol.dev"/>
+    <meta name="description" content="Xcode 27.1 ships an iPhone Duo simulator. Device Hub can fold it, rotate it and tap both of its screens, but nothing scriptable could. So I watched what Device Hub does and built duoctl."/>
+    <meta name="twitter:description" content="Xcode 27.1 ships an iPhone Duo simulator. Device Hub can fold it, rotate it and tap both of its screens, but nothing scriptable could. So I watched what Device Hub does and built duoctl."/>
+    <meta name="og:description" content="Xcode 27.1 ships an iPhone Duo simulator. Device Hub can fold it, rotate it and tap both of its screens, but nothing scriptable could. So I watched what Device Hub does and built duoctl."/>
+    <meta name="twitter:card" content="summary"/>
+    <link rel="stylesheet" href="/styles.css" type="text/css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="shortcut icon" href="/images/favicon.png" type="image/png"/>
+    <link rel="alternate" href="/feed.rss" type="application/rss+xml" title="Subscribe to skarol.dev"/>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="header">
+          <div class="header-content">
+            <a class="site-name" href="/">skarol.dev</a>
+            <p class="site-description">girl who code • mostly iOS  👩🏼‍💻</p>
+            <nav>
+              <ul class="navigation">
+                <li>
+                  <a class="selected-section-link" href="/posts">Articles</a>
+                </li>
+                <li>
+                  <a class="section-link" href="/speaking">Speaking</a>
+                </li>
+                <li>
+                  <a class="section-link" href="/experience">Experience</a>
+                </li>
+                <li>
+                  <a class="section-link" href="/contact">Contact</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </header>
+      <div class="main-container">
+        <div class="post-details">
+          <h1>Scripting the iPhone Duo simulator: how Device Hub folds, rotates and touches it</h1>
+          <div>
+            <p class="dates">07 Oct 2026</p>
+          </div><p>Xcode 27.1 ships an iPhone Duo simulator, and Device Hub (the app that replaced Simulator.app) can fold it, rotate it and tap either of its two screens. <strong>By hand.</strong> The moment I tried to do any of that from a script, everything fell apart.</p><p>More and more of us, iOS developers, let AI agents build our apps, run them on a simulator and check that a layout looks right before a PR goes out. With the Duo, the screen that matters most is the big inner one, and that's exactly the one nothing could reach:</p><ul><li><strong>Folding.</strong> <code>simctl</code> has no hinge or posture command. Neither does <code>devicectl</code>.</li><li><strong>Rotating.</strong> <code>devicectl device orientation set</code> reports success and changes nothing. So does <code>XCUIDevice.shared.orientation</code> in a UI test.</li><li><strong>Tapping.</strong> AXe, XcodeBuildMCP and RocketSim all reported success on the unfolded inner screen. Nothing happened.</li><li><strong>Screenshots.</strong> <code>simctl io screenshot</code> captures the inner screen even when the phone is folded, so you get a black image.</li></ul><p>The silent part is what hurts. <strong>Every one of those calls exits with 0.</strong> An agent happily carries on, takes a screenshot of the wrong screen and tells you the layout looks fine.</p><img src="/assets/posts/duoctl/demo.gif" alt="duoctl unfolding, tapping, swiping, rotating and half-folding the iPhone Duo simulator in Device Hub"/><h2>Watch what Device Hub does</h2><p>If Device Hub can do it, the simulator has a way to receive it. So the question was: what does Device Hub send?</p><p>The trick is unglamorous. Stream the logs on both sides of the wall: <code>log stream</code> on the Mac for Device Hub and CoreDevice, and <code>xcrun simctl spawn &lt;udid&gt; log stream</code> inside the simulator. Then press the button in Device Hub and read what happens.</p><h2>Folding: a hidden slider</h2><p>Folding had already been figured out by Artem Novichkov's <a href="https://github.com/artemnovichkov/hinge">hinge</a>. Device Hub has a hidden hinge slider (hold Option), and it sends a vendor-defined HID event (usage page <code>0xFF61</code>, usage <code>0x5B</code>) with a small serialized dictionary as its payload:</p><pre><code>provider = com.apple.Virtualization
+source   = hinge-slider-control
+type     = range
+value    = 0…180
+</code></pre><p>A tiny helper posts that event from inside the simulator (<code>xcrun simctl spawn</code>), <code>locationd</code> turns it into a hinge angle, and the Duo folds. Device Hub even plays the folding animation.</p><h2>Rotating: the same event, a different payload</h2><p>Rotation was where the logs paid off. When I pressed Rotate in Device Hub, the simulator's HID daemon logged "Handling IndigoVendorDefinedEvent" on <strong>the same channel as the hinge</strong>, about 300 ms before the inner screen changed orientation.</p><p>The payload keys were sitting right next to the hinge's, both in Device Hub's iPhone Duo plugin and inside <code>locationd</code>:</p><pre><code>provider = com.apple.Virtualization
+source   = orientation-picker-control
+type     = enum
+value    = portrait | pud | landscape-left
+           | landscape-right | faceup | facedown
+</code></pre><p>Post that and the Duo rotates. One surprise: the inner screen sits a quarter turn from the cover, so on the inner screen <code>landscape-left</code> is what gives you a <strong>portrait</strong> interface. Always read the result back instead of trusting the name.</p><h2>Touches: one touchscreen per screen</h2><p>Taps were the interesting part. I assumed they were being dropped, the way Xcode 27 drops a tap that arrives too early (<a href="https://github.com/cameroncooke/AXe/issues/71">AXe #71</a>). <strong>They weren't dropped. They were delivered to the wrong screen.</strong></p><p>Inside the simulator, every display gets its own touchscreen, each tagged with that display's ID: <code>mainTouchscreen(0x101)</code> for the cover and <code>touchscreen(0x103)</code> for the inner screen. A tap from AXe arrived like this:</p><pre><code>Handling IndigoDigitizerEvent
+Sending event to service mainTouchscreen(0x101)
+</code></pre><p>That's the cover screen, switched off while the phone is open. When I clicked the inner screen in Device Hub instead, the event went to <code>0x103</code>.</p><p>So the fix had to change <em>where</em> the touch goes, not <em>when</em>. Inside the simulator, I copy the inner screen's touchscreen as a virtual HID device (with the private HID framework's <code>HIDVirtualEventService</code>), keep its display ID, and send finger events through the copy. The first time, Safari's "Not Now" button disappeared on the inner screen. <strong>That was a good moment.</strong></p><p>It works on the cover too, in every orientation, for taps, long presses and swipes. And because the helper waits until the system confirms the touchscreen is ready, it also sidesteps the Xcode 27 timing bug on ordinary simulators.</p><p>I reported the inner-screen routing to AXe as <a href="https://github.com/cameroncooke/AXe/issues/74">#74</a>, so hopefully the tools we already use can pick it up.</p><h2>duoctl</h2><p>I wrapped everything into <strong><a href="https://github.com/skarol/duoctl">duoctl</a></strong>, a small command-line tool and agent skill:</p><pre><code>duoctl close                   # fold shut
+duoctl open --duration 1.5     # unfold, animated
+duoctl rotate portrait
+duoctl tap --label "Continue"  # inner screen too
+duoctl swipe 330 800 330 300
+duoctl screenshot shot.png     # whichever screen shows
+duoctl state                   # hinge, screen, size
+</code></pre><p><code>duoctl state</code> and every fold or rotation print JSON with the hinge angle, the active screen, the orientation and the size in points. An agent can check the result instead of hoping.</p><p>You can install it as a skill for your agent with <a href="https://skills.sh">skills.sh</a>:</p><pre><code>npx skills add skarol/duoctl
+</code></pre><p>or with <a href="https://github.com/numman-ali/openskills">openskills</a>:</p><pre><code>npx openskills install skarol/duoctl
+</code></pre><p>If you'd rather run <code>duoctl</code> yourself, in the terminal or on CI, install it with Homebrew:</p><pre><code>brew install skarol/tap/duoctl
+</code></pre><p>It's MIT licensed, and it's Python with a small Objective-C helper, so there's nothing to build.</p><h2>A fair warning</h2><p>All of this sits on private, undocumented simulator interfaces, checked with Xcode 27.1 and the iOS 27.1 runtime. A future Xcode may change them. duoctl reads the state back after every fold and rotation, so if that happens you'll get an error, <strong>not another silent success</strong>.</p><p>Have you started testing on the iPhone Duo yet? What's been the hardest part for you? Let me know, and if duoctl breaks on your setup, <a href="https://github.com/skarol/duoctl/issues">open an issue</a>.</p>
+        </div>
+      </div>
+      <footer class="footer">
+        <div class="footer-content">
+          <p>Copyright © SKAROL SOFTWARE Karolina Samorek 2021.</p>
+          <p>Built in Swift using 
+            <a href="https://github.com/johnsundell/publish" target="_blank" rel="noreferrer">Publish</a>.
+          </p>
+          <ul class="footer-links">
+            <li>
+              <a class="footer-icon" href="https://bit.ly/3dQx4pB" target="_blank" rel="noreferrer">
+                <img class="icon" src="/assets/icons/github.svg" alt="github link"/>
+              </a>
+            </li>
+            <li>
+              <a class="footer-icon" href="https://bit.ly/3dR28Wl" target="_blank" rel="noreferrer">
+                <img class="icon" src="/assets/icons/linkedin.svg" alt="linkedin link"/>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>
