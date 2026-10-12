@@ -74,3 +74,39 @@
     border-radius: 0.8rem;
 }
 
+
+.post-details table {
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.95em;
+}
+
+.post-details th,
+.post-details td {
+    text-align: left;
+    padding: 0.5rem 1.6rem 0.5rem 0;
+    vertical-align: top;
+    border-bottom: 1px solid var(--code-background-color);
+}
+
+.post-details th {
+    color: var(--heading-text-color);
+    font-weight: 600;
+}
+
+.post-details ol {
+    padding-left: 2.4rem;
+}
+
+.post-details ol li::marker {
+    color: var(--primary-accent-color);
+    font-weight: 600;
+}
+
+.post-details li + li {
+    margin-top: 0.6rem;
+}
+
+.post-details li {
+    padding-left: 0.4rem;
+}

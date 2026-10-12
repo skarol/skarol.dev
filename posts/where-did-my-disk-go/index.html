@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="og:site_name" content="skarol.dev"/>
+    <link rel="canonical" href="https://skarol.dev/posts/where-did-my-disk-go"/>
+    <meta name="twitter:url" content="https://skarol.dev/posts/where-did-my-disk-go"/>
+    <meta name="og:url" content="https://skarol.dev/posts/where-did-my-disk-go"/>
+    <title>Where did my disk go? Xcode, worktrees and AI agents | skarol.dev</title>
+    <meta name="twitter:title" content="Where did my disk go? Xcode, worktrees and AI agents | skarol.dev"/>
+    <meta name="og:title" content="Where did my disk go? Xcode, worktrees and AI agents | skarol.dev"/>
+    <meta name="description" content="Running AI agents on an iOS project in parallel worktrees quietly eats disk space, and when the disk fills up, Xcode reports everything except a full disk. Here's where the space goes, how to measure it honestly and how to keep it under control."/>
+    <meta name="twitter:description" content="Running AI agents on an iOS project in parallel worktrees quietly eats disk space, and when the disk fills up, Xcode reports everything except a full disk. Here's where the space goes, how to measure it honestly and how to keep it under control."/>
+    <meta name="og:description" content="Running AI agents on an iOS project in parallel worktrees quietly eats disk space, and when the disk fills up, Xcode reports everything except a full disk. Here's where the space goes, how to measure it honestly and how to keep it under control."/>
+    <meta name="twitter:card" content="summary"/>
+    <link rel="stylesheet" href="/styles.css" type="text/css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="shortcut icon" href="/images/favicon.png" type="image/png"/>
+    <link rel="alternate" href="/feed.rss" type="application/rss+xml" title="Subscribe to skarol.dev"/>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="header">
+          <div class="header-content">
+            <a class="site-name" href="/">skarol.dev</a>
+            <p class="site-description">girl who code • mostly iOS  👩🏼‍💻</p>
+            <nav>
+              <ul class="navigation">
+                <li>
+                  <a class="selected-section-link" href="/posts">Articles</a>
+                </li>
+                <li>
+                  <a class="section-link" href="/speaking">Speaking</a>
+                </li>
+                <li>
+                  <a class="section-link" href="/experience">Experience</a>
+                </li>
+                <li>
+                  <a class="section-link" href="/contact">Contact</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </header>
+      <div class="main-container">
+        <div class="post-details">
+          <h1>Where did my disk go? Xcode, worktrees and AI agents</h1>
+          <div>
+            <p class="dates">12 Oct 2026</p>
+          </div><p>A few weeks ago my builds started failing in strange ways. A linker step died. Then <code>lipo</code>. Then the module cache complained that a file "has been modified since the module file" was built. Clean builds didn't help.</p><p>The disk was full. Nothing in those errors said so.</p><p>This happens a lot more once AI agents are part of your workflow. I run two or three agents at once, each in its own git worktree, each building the app and running tests. Each worktree also gets its own copies of the simulators. Agents sharing one simulator would install over each other's builds and tap around in each other's screens. Every build, test run and simulator copy leaves gigabytes behind, and none of it cleans up after itself.</p><h2>TL;DR</h2><ol><li>When a build fails strangely, run <code>df -h /System/Volumes/Data</code> first.</li><li>Trust <code>df</code>, not <code>du</code>: clones make <code>du</code> overstate everything.</li><li>Clean up a worktree's DerivedData, test products and simulators when you remove it, with a skill, a hook or both.</li><li>Point every build of the same worktree at the same DerivedData.</li><li>When space is tight, delete whole regenerable folders, not pieces of them.</li><li>Every now and then, open <code>mo analyze</code> and look.</li></ol><h2>Xcode won't tell you the disk is full</h2><p>When the disk fills up mid-build, the error you see is rarely "No space left on device". The ones I hit:</p><ul><li><strong>Linker or <code>lipo</code> failures.</strong> These do mention "No space left on device", but buried in a long log.</li><li><strong>Module cache errors</strong> like "has been modified since the module file", left behind by a half-written cache.</li><li><strong>A wall of build-system errors.</strong> One build printed 23 lines of "unexpected incomplete target" and, at the very end, the real cause: <code>database or disk is full</code>.</li></ul><p>So the first rule: <strong>when a build fails in a way that makes no sense, check the disk before anything else.</strong> And read the <em>last</em> error, not the first.</p><h2>Measure the right thing</h2><p>Checking free space has two traps of its own.</p><p><strong><code>df -h /</code> lies.</strong> On modern macOS, <code>/</code> is the sealed, read-only system volume. One day mine reported 5.2 GB free while the volume where my files actually live was 99% full. Check the data volume instead:</p><pre data-language="bash" class="hljs"><code>df -h /System/Volumes/Data
+</code></pre><p><strong><code>du</code> double-counts.</strong> Xcode and the simulator copy files with APFS clones, which share their storage until one copy changes. <code>du</code> counts each copy at full size. I once deleted a folder <code>du</code> reported as 3 GB and got about 90 MB back, because DerivedData still held the same blocks. A built worktree of the app I work on looked like twice its real size in <code>du</code>.</p><p>So judge any cleanup by how much <code>df</code> changes, not by what <code>du</code> said the folder weighed.</p><h2>Where the space goes</h2><p>How much space each of these takes depends on your app: its size, its packages and how many tests you run. What doesn't depend on your app is <em>what</em> grows. All of these live under <code>~/Library/Developer/</code>:</p><table><thead><tr><th>What</th><th>Where</th><th>Grows with</th></tr></thead><tbody><tr><td>Agent test runs</td><td><code>XcodeBuildMCP/workspaces/</code></td><td>every test run</td></tr><tr><td>Deleted worktrees</td><td><code>Xcode/DerivedData/</code></td><td>every worktree you remove</td></tr><tr><td>Cloned simulators</td><td><code>CoreSimulator/Devices/</code></td><td>every clone and its apps</td></tr><tr><td>Module caches</td><td><code>Xcode/DerivedData/ModuleCache.noindex</code></td><td>Xcode and SDK updates</td></tr></tbody></table><p>For scale, I work on a modular UIKit app of about 300,000 lines of Swift in 70 packages. For me, one test run left 6–7 GB, a built worktree cost 25–30 GB and a cloned simulator about 3 GB. Yours might be a tenth of that, or more.</p><p>The first row surprised me most. <a href="https://github.com/getsentry/XcodeBuildMCP">XcodeBuildMCP</a>, which my agents use to build and test, keeps a full copy of the test products for every test run, outside DerivedData, so Xcode's clean doesn't touch it. One afternoon of UI and snapshot tests left 96 GB there and filled the disk twice.</p><p>The second row is the slow leak. Every worktree you delete leaves its DerivedData folder behind, and if you also build it with plain <code>xcodebuild</code>, that's a second folder. I found 65 orphaned folders. You can tell them apart because a live folder has an <code>info.plist</code> whose <code>WorkspacePath</code> points at a project that still exists. An orphan's either has no <code>info.plist</code> or points at a path that's gone.</p><p>To see your own numbers, list the biggest folders in each place:</p><pre data-language="bash" class="hljs"><code><span class="hljs-built_in">cd</span> ~/Library/Developer
+du -sh XcodeBuildMCP/workspaces/* Xcode/DerivedData/* CoreSimulator/Devices/* \
+  2&gt;/dev/null | sort -h | tail -15
+</code></pre><p><code>du</code> is fine for finding the big ones. Just don't expect deleting them to free exactly that much (more on that above).</p><h2>Clean up when the worktree goes</h2><p>The best moment to clean up is when you remove a worktree. You know exactly what belonged to it, so nothing has to be guessed later:</p><ol><li>The worktree and its branch.</li><li>Its DerivedData folders: every folder whose <code>info.plist</code> has a <code>WorkspacePath</code> inside the worktree.</li><li>Its XcodeBuildMCP workspace, named after the worktree directory.</li><li>Its simulators. Name your clones after the worktree (I use <code>wt-&lt;ticket&gt;-&lt;device&gt;</code>) and they're easy to find.</li><li>Anything else you keep per worktree, like screenshots or test diffs.</li></ol><p>I wrote this down as an <strong>agent skill</strong>: a <code>cleanup-worktree</code> instruction file the agent follows after a PR is merged. It checks that the PR really merged and nothing is left uncommitted, removes everything above and reports how much space came back. It also sweeps orphans from worktrees deleted earlier, but asks before deleting those, because matching them is guesswork.</p><p>If you'd rather not depend on remembering to ask, make it automatic. I manage worktrees with <a href="https://worktrunk.dev">worktrunk</a>, which runs hooks when a worktree is removed. A user-level hook could clean the Xcode leftovers every time:</p><pre data-language="toml" class="hljs"><code><span class="hljs-comment"># ~/.config/worktrunk/config.toml</span>
+<span class="hljs-section">[post-remove]</span>
+<span class="hljs-attr">xcode-leftovers</span> = <span class="hljs-string">"""
+cd ~/Library/Developer
+# XcodeBuildMCP names workspaces &lt;worktree&gt;-&lt;12-character hash&gt;
+for dir in XcodeBuildMCP/workspaces/*; do
+  case "${dir##*/}" in
+    {{ worktree_name }}-????????????) rm -rf "$dir" ;;
+  esac
+done
+for plist in Xcode/DerivedData/*/info.plist; do
+  case "$(plutil -extract WorkspacePath raw "$plist" 2&gt;/dev/null)" in
+    {{ worktree_path }}/*) rm -rf "${plist%/info.plist}" ;;
+  esac
+done
+"""</span>
+</code></pre><p>The skill and the hook complement each other: the hook makes sure the obvious things go every time, and the skill handles the judgement calls, like whether the branch is really merged.</p><h2>Stop making new copies</h2><p>Cleaning up is half of it. The other half is not creating duplicates in the first place.</p><p><strong>Share one DerivedData per worktree.</strong> My agents build through XcodeBuildMCP, which uses its own DerivedData path. But some scripts called <code>xcodebuild</code> directly, with the default path, so the same worktree got built twice in two places. Now every direct <code>xcodebuild</code> call passes the same <code>-derivedDataPath</code> as the MCP. The second build compiles nothing.</p><p><strong>Keep your own Xcode separate.</strong> I deliberately left builds from the Xcode app in the default DerivedData. That way, opening a worktree in Xcode never fights an agent's build over the same folder.</p><p><strong>Delete whole trees, not pieces.</strong> Because of the clones, deleting test products alone frees almost nothing. When the disk is really full, what actually helped was:</p><ul><li>the module caches (<code>ModuleCache.noindex</code> and <code>SDKExplicitPrecompiledModules</code>), which come back immediately and are rebuilt on the next build;</li><li>the whole XcodeBuildMCP workspace of a worktree that no longer exists;</li><li>simulator clones nobody uses.</li></ul><h2>Look before you clean</h2><p>Before any of this, it's worth seeing for yourself where the space actually went. <a href="https://github.com/tw93/mole">Mole</a> (<code>brew install mole</code>) is a free, open-source Mac cleanup tool with a very good disk explorer:</p><pre data-language="bash" class="hljs"><code>mo analyze
+</code></pre><p>It shows your disk as a tree you can walk through, largest folders first, which is the quickest way to see where the space actually went before you delete anything. It also has <code>mo clean</code> and <code>mo purge</code> for caches and build artifacts, both with <code>--dry-run</code> so you can see what they'd remove first.</p><p>I'd run it by hand, though, not give it to an agent. The point is for <em>you</em> to understand where the space goes, and then to automate the parts you understand.</p><p>None of this is hard, but none of it happens on its own. Look once with <code>mo analyze</code> to see where your space goes, then let a hook or a skill clean up after every worktree, and you can stop thinking about it.</p>
+        </div>
+      </div>
+      <footer class="footer">
+        <div class="footer-content">
+          <p>Copyright © SKAROL SOFTWARE Karolina Samorek 2021.</p>
+          <p>Built in Swift using 
+            <a href="https://github.com/johnsundell/publish" target="_blank" rel="noreferrer">Publish</a>.
+          </p>
+          <ul class="footer-links">
+            <li>
+              <a class="footer-icon" href="https://bit.ly/3dR28Wl" target="_blank" rel="noreferrer">
+                <img class="icon" src="/assets/icons/linkedin.svg" alt="linkedin link"/>
+              </a>
+            </li>
+            <li>
+              <a class="footer-icon" href="https://bit.ly/3dQx4pB" target="_blank" rel="noreferrer">
+                <img class="icon" src="/assets/icons/github.svg" alt="github link"/>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>

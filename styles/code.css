@@ -1,0 +1,69 @@
+:root {
+    --code-keyword-color: #5462b4;
+    --code-type-color: #8a52a8;
+    --code-string-color: #b2532a;
+    --code-comment-color: #8e8e96;
+    --code-label-color: #9a9aa2;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --code-keyword-color: #9aa5ea;
+        --code-type-color: #cfa2ec;
+        --code-string-color: #ffb089;
+        --code-comment-color: #8c8c94;
+        --code-label-color: #7c7c84;
+    }
+}
+
+.post-details pre.hljs {
+    position: relative;
+}
+
+.post-details pre[data-language]::before {
+    content: attr(data-language);
+    position: absolute;
+    top: 0.6rem;
+    right: 1rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--code-label-color);
+}
+
+.post-details pre[data-language="text"]::before,
+.post-details pre[data-language="plaintext"]::before {
+    content: none;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-section,
+.hljs-literal {
+    color: var(--code-keyword-color);
+    font-weight: 600;
+}
+
+.hljs-type,
+.hljs-title,
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable {
+    color: var(--code-type-color);
+}
+
+.hljs-string,
+.hljs-number,
+.hljs-symbol,
+.hljs-regexp {
+    color: var(--code-string-color);
+}
+
+.hljs-comment,
+.hljs-meta,
+.hljs-quote {
+    color: var(--code-comment-color);
+    font-style: italic;
+}

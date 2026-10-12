@@ -70,13 +70,19 @@
     <loc>https://skarol.dev/posts</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-12</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/posts/scripting-the-iphone-duo-simulator</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-12</lastmod>
+  </url>
+  <url>
+    <loc>https://skarol.dev/posts/where-did-my-disk-go</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <lastmod>2026-10-12</lastmod>
   </url>
   <url>
     <loc>https://skarol.dev/posts/why-we-fail-to-keep-good-quality-software</loc>
