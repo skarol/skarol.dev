@@ -110,3 +110,19 @@
 .post-details li {
     padding-left: 0.4rem;
 }
+
+.home-intro {
+    font-weight: 300;
+}
+
+.home-intro p {
+    margin-bottom: 1rem;
+}
+
+.home-intro p:first-child {
+    font-size: 2.2em;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--heading-text-color);
+    margin-bottom: 1.5rem;
+}
